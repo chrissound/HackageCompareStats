@@ -73,13 +73,6 @@ multiParam x = do
   v <- params
   return $ convertString . snd <$> (filter (\z -> (fst z == convertString x)) $ v)
 
-data ScriptInject = ScriptInject String
-
-instance ToMustache ScriptInject where
-    toMustache (ScriptInject value) = object
-      [ "scriptInject" ~> value
-      ]
-
 renderTemplate :: String -> (HeistState IO -> HeistState IO) -> ActionM ()
 renderTemplate fileName hsBinding = do
   let emptyI = return () :: MapSyntax Text (I.Splice IO)
@@ -96,7 +89,8 @@ renderTemplate fileName hsBinding = do
           let grr = toLazyByteString builder
           let templateYo = compileTemplate "hmm" (convertString grr) 
           case templateYo of
-            (Right tempalteYolo) -> html . convertString $ substituteValue tempalteYolo (toMustache $ ScriptInject "<h1>woah</h1>")
+            (Right tempalteYolo) -> html . convertString $ substituteValue tempalteYolo
+              (object ["scriptInject" ~> ("<h1>woah</h1>" :: String)])
             (Left _) -> error "Failed to compile template"
         Nothing -> error "heist error"
     Left a -> error . convertString $ show a
