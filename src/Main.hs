@@ -20,83 +20,17 @@ import Data.Text (Text)
 --import qualified Data.Text
 import Data.String.Conversions
 import Data.Maybe (isJust)
-import qualified Heist
-import qualified Heist.Interpreted as I
-import qualified Heist.Compiled as HeistCom
-import Heist.Internal.Types
-import qualified Text.XmlHtml as X
-import Data.List (sortBy)
-import Data.Map.Syntax
-import Data.ByteString.Builder (toLazyByteString)
 
 import Text.Mustache
 
--- imported
-sortPs :: [APS] -> [APS]
-sortPs ps = sortBy (\(_,x) (_,y) -> compare x y) ps
+import CompareForm
+import Common
+import Render
 
-optionHtml :: Text -> X.Node
-optionHtml v = X.Element "option" [("value", v)] []
-
-generateRecordSplice :: Text -> I.Splice IO
-generateRecordSplice = I.runNode . optionHtml
-
-generateRecordSplices :: [Text] -> I.Splice IO
-generateRecordSplices = I.mapSplices generateRecordSplice
-
-statisticRemark :: [APS] -> [String]
-statisticRemark ( (xhead,xp) : xs@(xshead,xsp) : xss ) =
-  [convertString xhead ++ " is " ++ show (xp / xsp) ++ "x as popular as " ++ convertString xshead ++ ". "]
-  ++ statisticRemark (xs:xss)
-statisticRemark _ = []
-
-compareFormBinds :: Show a => Arch.PackagesStats -> [a] -> [APS] -> HeistState IO -> HeistState IO
-compareFormBinds x' rp' results = I.bindSplices $
-                        do "packages" ##
-                             (generateRecordSplices . fmap fst $ Arch.getPackages x')
-                           "statisticResult" ##
-                             I.runChildrenWith
-                               (do "requestedPackage" ##
-                                     (I.textSplice . convertString $ show rp')
-                                   "statisticRemark" ##
-                                     (I.textSplice .
-                                      convertString .
-                                      concat . statisticRemark . reverse . sortPs $
-                                      results))
---
-
-type APS = Arch.PackageStat
-type APSm = Arch.PackagesStats
-
-multiParam :: Text -> ActionM [Text]
-multiParam x = do
-  v <- params
-  return $ convertString . snd <$> (filter (\z -> (fst z == convertString x)) $ v)
-
-renderTemplate :: String -> (HeistState IO -> HeistState IO) -> ActionM ()
-renderTemplate fileName hsBinding = do
-  let emptyI = return () :: MapSyntax Text (I.Splice IO)
-  let emptyC = return () :: MapSyntax Text (HeistCom.Splice IO)
-  let emptyA = return () :: MapSyntax Text (AttrSplice IO)
-  let templateLocations = [Heist.loadTemplates "templates/"]
-  let spliceConfig = SpliceConfig emptyI emptyI emptyC emptyA templateLocations (\_ -> True):: SpliceConfig IO
-  heist <- lift $ Heist.initHeist (HeistConfig spliceConfig "" True)
-  case heist of
-    Right heist' -> do
-      rendered <- lift $ I.renderTemplate (hsBinding heist') $ convertString fileName
-      case (rendered) of
-        Just (builder, _) -> do
-          let grr = toLazyByteString builder
-          let templateYo = compileTemplate "hmm" (convertString grr) 
-          case templateYo of
-            (Right tempalteYolo) -> html . convertString $ substituteValue tempalteYolo
-              (object ["scriptInject" ~> ("<h1>woah</h1>" :: String)])
-            (Left _) -> error "Failed to compile template"
-        Nothing -> error "heist error"
-    Left a -> error . convertString $ show a
 
 comparePackage :: ActionM ()
 comparePackage = do
+  let blazeBinding = (object ["scriptInject" ~> ("<h1>woah</h1>" :: String)])
   requestedPackages <- comparePackageRequestedPackages
   statisticsStore <- liftIO $ Arch.getPackagesStats "packageStatistics.json"
   case (statisticsStore) of
@@ -104,7 +38,8 @@ comparePackage = do
       aps <- comparePackageGetPackages requestedPackages statisticsStore'
       --_ <- renderTemplate "compareForm"  $ compareFormBinds statisticsStore' requestedPackages aps
       --renderTemplate "compareForm"  id
-      renderTemplate "compareForm"  $ compareFormBinds statisticsStore' requestedPackages aps
+      rendered <- lift $ renderTemplate "compareForm"  ( compareFormBinds statisticsStore' requestedPackages aps ) blazeBinding
+      html . convertString $ rendered
     Nothing -> raise "Couldn't open database store"
 
 
