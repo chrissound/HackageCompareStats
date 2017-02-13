@@ -30,6 +30,7 @@ statisticRemark ( (xhead,xp) : xs@(xshead,xsp) : xss ) =
   ++ statisticRemark (xs:xss)
 statisticRemark _ = []
 
+
 compareFormBinds :: Show a => Arch.PackagesStats -> [a] -> [APS] -> HeistState IO -> HeistState IO
 compareFormBinds x' rp' results = I.bindSplices $
                         do "packages" ##
@@ -43,3 +44,4 @@ compareFormBinds x' rp' results = I.bindSplices $
                                       convertString .
                                       concat . statisticRemark . reverse . sortPs $
                                       results))
+

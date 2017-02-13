@@ -6,11 +6,17 @@ import Data.String.Conversions
 import Data.ByteString.Builder (toLazyByteString)
 import qualified Heist.Interpreted as I
 import qualified Heist.Compiled as HeistCom
-import Text.Mustache
+import Text.Mustache (compileTemplate, substituteValue)
 import Data.Map.Syntax
 import Heist.Internal.Types
 import Data.Text (Text)
-import Text.Mustache.Types
+import Text.Mustache.Types (Value)
+
+renderMustacheTemplate :: String -> Value -> Text
+renderMustacheTemplate name binding = case (compileTemplate "" (convertString name)) of
+  Right template -> substituteValue template binding
+  Left _ -> error $ "Failed to render " ++ name
+
 
 renderTemplate :: String -> (HeistState IO -> HeistState IO) -> Value -> IO Text
 renderTemplate fileName hsBinding blazeBinding= do
@@ -25,10 +31,6 @@ renderTemplate fileName hsBinding blazeBinding= do
       rendered <- I.renderTemplate (hsBinding heist') $ convertString fileName
       case (rendered) of
         Just (builder, _) -> do
-          let grr = toLazyByteString builder
-          let templateYo = compileTemplate "hmm" (convertString grr) 
-          case templateYo of
-            (Right tempalteYolo) -> return $ substituteValue tempalteYolo blazeBinding
-            (Left _) -> error "Failed to compile template"
+          return $ renderMustacheTemplate (convertString $ toLazyByteString builder) blazeBinding
         Nothing -> error "heist error"
     Left a -> error . convertString $ show a

@@ -49,6 +49,7 @@ $(function () {
         credits: {
             enabled: false
         },
+        {{{ jsonData }}}
         series: [{
             name: 'Year 1800',
             data: [107, 31, 635, 203, 2]
