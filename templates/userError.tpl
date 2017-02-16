@@ -1,11 +1,6 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-    <script>
-    {{{ scriptInject }}}
     </script>
   </head>
   <body>
@@ -25,9 +20,9 @@
       <input type="submit" value="Compare" />
     </form>
     <statisticResult>
-      <p>Requested packages: <requestedPackage/></p>
-      <div id="container" style="min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto">
-      </div>
+      <p>Requested packages: <requestedPackage/>
+      </p>
+      <p>An error was encountered:</p>
     </statisticResult>
   </body>
 </html>

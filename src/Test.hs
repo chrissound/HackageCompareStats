@@ -17,7 +17,6 @@ testGetComparePackage = do
     Just statisticsStore -> do
       case (comparePackageGetPackages ["vim", "emacs"] statisticsStore) of
         Right aps -> do
-          print "hmm???"
           text <- getComparePackageTmpl ["vim", "emacs"] aps statisticsStore
           return text
         Left e -> error e

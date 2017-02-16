@@ -15,20 +15,22 @@ import Data.Maybe (isJust)
 import Text.Mustache
 
 import CompareForm
-import CompareFormJson ()
+import CompareFormJson (comparisonToHighChartSeries)
 import Common
 import Render
+import Data.Aeson (encode)
 
 getComparePackageTmpl :: [PTitle] -> [APS] -> APSs-> IO Text
 getComparePackageTmpl requestedPackages' foundPackages statisticsStore = do
       scriptInject <- readFile "templates/compareForm.js"
-      let blazeBinding = object [
-            "scriptInject" ~> (renderMustacheTemplate scriptInject (
-                object ["jsonData" ~= (packages $ convert foundPackages)]
-                ))
-            ]
-      print ("Bob" :: String)
-      renderTemplate "compareForm"  ( compareFormBinds statisticsStore requestedPackages' foundPackages ) blazeBinding
+      let jsonData2 = (comparisonToHighChartSeries $ convert foundPackages)
+      let mRender = renderMustacheTemplate scriptInject
+                      (object ["jsonData" ~> (convertString $ encode jsonData2 :: String)])
+      case mRender of
+        Just mRender' -> do
+          let blazeBinding = object ["scriptInject" ~> mRender']
+          renderTemplate "compareForm" ( compareFormBinds statisticsStore requestedPackages' foundPackages ) blazeBinding
+        Nothing -> error "Mustache render error. Failed to render "
 
 comparePackageHandler :: ActionM ()
 comparePackageHandler = do
@@ -65,4 +67,4 @@ comparePackageGetPackages requestedPackages' statisticsStore = do
 main :: IO ()
 main = scotty 3000 $ do
     middleware logStdoutDev
-    get "/comparePackageHandler" comparePackageHandler
+    get "/comparePackage" comparePackageHandler

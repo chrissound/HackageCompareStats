@@ -20,10 +20,11 @@ data PackageStatComparison = PackageStatComparison {
 } deriving (Show)
 
 convert :: [APS] -> PackageStatComparison
-convert x@(_:_) = PackageStatComparison (Just $ topPkg) $ APCSm sorted where
-  sorted@(topPkg:_) = fmap convertAPS $ sort x where
-    (_, topPerc) = topPkg
+convert x@(_:_) = PackageStatComparison (Just $ topPkg) $ APCSm sortedConverted where
+  sorted@(topPkg:_) = sort x
+  sortedConverted = fmap convertAPS $ sorted where
     convertAPS (p, perc) = (p, perc / topPerc)
+    (_,topPerc) = topPkg
 convert _ = PackageStatComparison Nothing $ APCSm []
 
 multiParam :: Text -> ActionM [Text]

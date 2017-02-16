@@ -12,14 +12,13 @@ import Heist.Internal.Types
 import Data.Text (Text)
 import Text.Mustache.Types (Value)
 
-renderMustacheTemplate :: String -> Value -> Text
+renderMustacheTemplate :: String -> Value -> Maybe Text
 renderMustacheTemplate name binding = case (compileTemplate "" (convertString name)) of
-  Right template -> substituteValue template binding
-  Left _ -> error $ "Failed to render " ++ name
+  Right template -> Just $ substituteValue template binding
+  Left _ -> Nothing
 
-
-renderTemplate :: String -> (HeistState IO -> HeistState IO) -> Value -> IO Text
-renderTemplate fileName hsBinding blazeBinding= do
+renderHeistTemplatePath :: String -> (HeistState IO -> HeistState IO) -> IO (Either Text Text)
+renderHeistTemplatePath fileName hsBinding = do
   let emptyI = return () :: MapSyntax Text (I.Splice IO)
   let emptyC = return () :: MapSyntax Text (HeistCom.Splice IO)
   let emptyA = return () :: MapSyntax Text (AttrSplice IO)
@@ -30,7 +29,15 @@ renderTemplate fileName hsBinding blazeBinding= do
     Right heist' -> do
       rendered <- I.renderTemplate (hsBinding heist') $ convertString fileName
       case (rendered) of
-        Just (builder, _) -> do
-          return $ renderMustacheTemplate (convertString $ toLazyByteString builder) blazeBinding
-        Nothing -> error "heist error"
-    Left a -> error . convertString $ show a
+        Just (builder, _) -> return . return . convertString $ toLazyByteString builder
+        Nothing -> return . Left $ "Heist render error. No further information"
+    Left a -> return . Left . convertString . show $ a
+
+renderTemplate :: String -> (HeistState IO -> HeistState IO) -> Value -> IO Text
+renderTemplate fileName hsBinding mBinding = do
+  heistRender <- renderHeistTemplatePath fileName hsBinding
+  case heistRender of
+    Right heistRender' -> case renderMustacheTemplate (convertString heistRender') mBinding of
+      Just x -> return x
+      Nothing -> error "Mustache render error. Failed to render "
+    Left e -> error $ convertString e
