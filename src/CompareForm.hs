@@ -1,47 +1,56 @@
 {-# LANGUAGE OverloadedStrings #-}
 module CompareForm where
 
-import Data.Text (Text)
-import qualified Text.XmlHtml as X
-import qualified Heist.Interpreted as I
 import qualified Arch
-import Heist.Internal.Types
-import Data.List (sortBy)
-import Data.String.Conversions
-import Data.Map.Syntax
+import           Common
+import           CompareFormTemplate
+import           Control.Monad
+import           Control.Monad.Trans
+import           Data.Maybe                           (isJust)
+import           Data.String.Conversions
+import           Prelude
+import           UserError                            (getErrorTmpl)
+import           Web.Scotty
 
-import Common
+comparePackageHandler :: ActionM ()
+comparePackageHandler = do
+  requestedPackages' <- requestedPackages
+  rescue (do
+    when ( not $ length requestedPackages' >= 2) $
+      raise "You need to specify atleast two requestedPackages"
+    statisticsStore <- liftIO $ Arch.getPackagesStats "packageStatistics.json"
+    case (statisticsStore) of
+      Just statisticsStore' -> do
+        case comparePackageGetPackages requestedPackages' statisticsStore' of
+          Right aps -> (lift $ getComparePackageTmpl requestedPackages' aps statisticsStore') >>= (html . convertString)
+          Left e -> raise . convertString $ e
+      Nothing -> raise "Couldn't open database store"
+    ) (\e-> (lift $ getErrorTmpl (convertString e) requestedPackages') >>= (html . convertString))
 
-sortPs :: [APS] -> [APS]
-sortPs ps = sortBy (\(_,x) (_,y) -> compare x y) ps
-
-optionHtml :: Text -> X.Node
-optionHtml v = X.Element "option" [("value", v)] []
-
-generateRecordSplice :: Text -> I.Splice IO
-generateRecordSplice = I.runNode . optionHtml
-
-generateRecordSplices :: [Text] -> I.Splice IO
-generateRecordSplices = I.mapSplices generateRecordSplice
-
-statisticRemark :: [APS] -> [String]
-statisticRemark ( (xhead,xp) : xs@(xshead,xsp) : xss ) =
-  [convertString xhead ++ " is " ++ show (xp / xsp) ++ "x as popular as " ++ convertString xshead ++ ". "]
-  ++ statisticRemark (xs:xss)
-statisticRemark _ = []
+comparePackageFormHandler :: ActionM ()
+comparePackageFormHandler = do
+  rescue (do
+    statisticsStore <- liftIO $ Arch.getPackagesStats "packageStatistics.json"
+    withStatisticStore (\store -> (lift $ getComparePackageTmpl [] [] store) >>= (html . convertString)) statisticsStore
+    ) (\e-> (lift $ getErrorTmpl (convertString e) []) >>= (html . convertString))
 
 
-compareFormBinds :: Show a => Arch.PackagesStats -> [a] -> [APS] -> HeistState IO -> HeistState IO
-compareFormBinds x' rp' results = I.bindSplices $
-                        do "packages" ##
-                             (generateRecordSplices . fmap fst $ Arch.getPackages x')
-                           "statisticResult" ##
-                             I.runChildrenWith
-                               (do "requestedPackage" ##
-                                     (I.textSplice . convertString $ show rp')
-                                   "statisticRemark" ##
-                                     (I.textSplice .
-                                      convertString .
-                                      concat . statisticRemark . reverse . sortPs $
-                                      results))
+catchError :: [PTitle] -> String -> ActionM ()
+catchError pkgs = (\e -> (lift $ getErrorTmpl (convertString e) pkgs) >>= (html . convertString))
 
+withStatisticStore :: (APSs -> ActionM ()) -> Maybe APSs -> ActionM ()
+withStatisticStore = maybe (raise "Couldn't open database store")
+
+requestedPackages :: ActionM [PTitle]
+requestedPackages = multiParam "package[]" >>= return . filter (/= "")
+
+comparePackageGetPackages :: [PTitle] -> APSs -> Either String [APS]
+comparePackageGetPackages requestedPackages' statisticsStore = do
+  let searchPackages = Arch.searchPackageStats statisticsStore
+  let packagesResult = map (searchPackages . convertString) requestedPackages' :: [Maybe APS]
+  case (sequence packagesResult) of
+    Just (results) -> return results
+    Nothing -> Left . convertString $ "Unable to find the following requestedPackages: "  ++ show packagesNotFound where
+      packagesNotFound = join $ zipWith
+        (\requestedPkg packageResult -> if isJust packageResult then [] else [requestedPkg])
+        requestedPackages' packagesResult

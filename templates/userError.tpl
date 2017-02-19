@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
   <head>
-    </script>
   </head>
   <body>
     <h1>Arch Linux Package Statistic Comparison</h1>
@@ -22,7 +21,7 @@
     <statisticResult>
       <p>Requested packages: <requestedPackage/>
       </p>
-      <p>An error was encountered:</p>
-    </statisticResult>
+      <p>An error was encountered: <errorMessage/>.</p>
+    </statisticresult>
   </body>
 </html>

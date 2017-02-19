@@ -7,6 +7,7 @@ import Data.Text (Text)
 import Web.Scotty
 import Data.List (sort)
 import GHC.Generics
+import Data.List (sortBy)
 
 type PackageTitle = Text
 type PTitle = PackageTitle
@@ -31,3 +32,6 @@ multiParam :: Text -> ActionM [Text]
 multiParam x = do
   v <- params
   return $ convertString . snd <$> (filter (\z -> (fst z == convertString x)) $ v)
+
+sortPs :: [APS] -> [APS]
+sortPs ps = sortBy (\(_,x) (_,y) -> compare x y) ps
