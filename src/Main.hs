@@ -11,5 +11,5 @@ main :: IO ()
 main = scotty 3000 $ do
     middleware logStdoutDev
     get (literal "/comparePackage") comparePackageHandler
-    get "/comparePackage" comparePackageHandler
-    get "" comparePackageHandler
+    get "/comparePackage" comparePackageFormHandler
+    get "" comparePackageFormHandler

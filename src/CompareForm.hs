@@ -30,10 +30,11 @@ comparePackageHandler = do
 
 comparePackageFormHandler :: ActionM ()
 comparePackageFormHandler = do
+  lift $ print ("test"::String)
   rescue (do
     statisticsStore <- liftIO $ Arch.getPackagesStats "packageStatistics.json"
     withStatisticStore
-      (\store -> (lift $ getComparePackageTmpl [] [] store) >>= (respondHtml))
+      (\store -> (lift $ getComparePackageFormTmpl store) >>= (respondHtml))
       statisticsStore
     ) (catchError [])
 

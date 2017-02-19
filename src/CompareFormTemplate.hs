@@ -29,19 +29,19 @@ generateRecordSplices = I.mapSplices generateRecordSplice
 requestedPackageBind :: (Data.String.IsString k, Show a, Monad m) => a -> MapSyntax k (HeistT n m Heist.Internal.Types.Template)
 requestedPackageBind x = "requestedPackage" ## (I.textSplice . convertString $ show x)
 
-compareFormBinds :: Show a => Arch.PackagesStats -> [a] -> [APS] -> HeistState IO -> HeistState IO
-compareFormBinds x' rp' results = I.bindSplices $
-                        do "packages" ##
-                             (generateRecordSplices . fmap fst $ Arch.getPackages x')
+packagesBind :: IsString k => Arch.PackagesStats -> MapSyntax k (I.Splice IO)
+packagesBind x = "packages" ## (generateRecordSplices . fmap fst $ Arch.getPackages x)
+
+compareFormFormBinds :: Arch.PackagesStats -> HeistBind
+compareFormFormBinds = I.bindSplices . packagesBind
+
+compareFormBinds :: Show a => Arch.PackagesStats -> [a] -> HeistBind
+compareFormBinds x rp = I.bindSplices $
+                        do packagesBind x
                            "statisticResult" ##
                              I.runChildrenWith
                                (do
-                                   requestedPackageBind rp'
-                                   "statisticRemark" ##
-                                     (I.textSplice .
-                                      convertString .
-                                      concat . statisticRemark . reverse . sortPs $
-                                      results))
+                                   requestedPackageBind rp)
 
 getComparePackageTmpl :: [PTitle] -> [APS] -> APSs-> IO Text
 getComparePackageTmpl requestedPackages' foundPackages statisticsStore = do
@@ -51,12 +51,9 @@ getComparePackageTmpl requestedPackages' foundPackages statisticsStore = do
                       (object ["jsonData" ~> (convertString $ encode jsonData2 :: String)])
       case mRender of
         Just mRender' -> do
-          let blazeBinding = object ["scriptInject" ~> mRender']
-          renderTemplate "compareForm" ( compareFormBinds statisticsStore requestedPackages' foundPackages ) blazeBinding
+          let mBinding = object ["scriptInject" ~> mRender']
+          renderTemplate "compareForm" ( compareFormBinds statisticsStore requestedPackages') $ Just mBinding
         Nothing -> error "Mustache render error. Failed to render "
 
-statisticRemark :: [APS] -> [String]
-statisticRemark ( (xhead,xp) : xs@(xshead,xsp) : xss ) =
-  [convertString xhead ++ " is " ++ show (xp / xsp) ++ "x as popular as " ++ convertString xshead ++ ". "]
-  ++ statisticRemark (xs:xss)
-statisticRemark _ = []
+getComparePackageFormTmpl :: APSs-> IO Text
+getComparePackageFormTmpl statisticsStore = renderTemplate "compareFormForm" (compareFormFormBinds statisticsStore) Nothing

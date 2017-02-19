@@ -12,12 +12,15 @@ import Heist.Internal.Types
 import Data.Text (Text)
 import Text.Mustache.Types (Value)
 
+type TemplateName = String
+type HeistBind = HeistState IO -> HeistState IO
+
 renderMustacheTemplate :: String -> Value -> Maybe Text
 renderMustacheTemplate name binding = case (compileTemplate "" (convertString name)) of
   Right template -> Just $ substituteValue template binding
   Left _ -> Nothing
 
-renderHeistTemplatePath :: String -> (HeistState IO -> HeistState IO) -> IO (Either Text Text)
+renderHeistTemplatePath :: TemplateName -> HeistBind -> IO (Either Text Text)
 renderHeistTemplatePath fileName hsBinding = do
   let emptyI = return () :: MapSyntax Text (I.Splice IO)
   let emptyC = return () :: MapSyntax Text (HeistCom.Splice IO)
@@ -33,11 +36,13 @@ renderHeistTemplatePath fileName hsBinding = do
         Nothing -> return . Left $ "Heist render error. No further information"
     Left a -> return . Left . convertString . show $ a
 
-renderTemplate :: String -> (HeistState IO -> HeistState IO) -> Value -> IO Text
+renderTemplate :: TemplateName -> HeistBind -> Maybe Value -> IO Text
 renderTemplate fileName hsBinding mBinding = do
   heistRender <- renderHeistTemplatePath fileName hsBinding
   case heistRender of
-    Right heistRender' -> case renderMustacheTemplate (convertString heistRender') mBinding of
-      Just x -> return x
-      Nothing -> error "Mustache render error. Failed to render "
+    Right heistRender' -> case mBinding of
+      Just mBinding' -> case renderMustacheTemplate (convertString heistRender') mBinding' of
+        Just x -> return x
+        Nothing -> error "Mustache render error. Failed to render "
+      Nothing -> return $ convertString heistRender'
     Left e -> error $ convertString e
