@@ -11,6 +11,7 @@ import           Data.String.Conversions
 import           Prelude
 import           UserError                            (getErrorTmpl)
 import           Web.Scotty
+import qualified Data.Text.Internal.Lazy as LText (Text)
 
 comparePackageHandler :: ActionM ()
 comparePackageHandler = do
@@ -19,24 +20,26 @@ comparePackageHandler = do
     when ( not $ length requestedPackages' >= 2) $
       raise "You need to specify atleast two requestedPackages"
     statisticsStore <- liftIO $ Arch.getPackagesStats "packageStatistics.json"
-    case (statisticsStore) of
-      Just statisticsStore' -> do
-        case comparePackageGetPackages requestedPackages' statisticsStore' of
-          Right aps -> (lift $ getComparePackageTmpl requestedPackages' aps statisticsStore') >>= (html . convertString)
+    withStatisticStore
+      (\store -> case comparePackageGetPackages requestedPackages' store of
+          Right aps -> (lift $ getComparePackageTmpl requestedPackages' aps store) >>= respondHtml
           Left e -> raise . convertString $ e
-      Nothing -> raise "Couldn't open database store"
-    ) (\e-> (lift $ getErrorTmpl (convertString e) requestedPackages') >>= (html . convertString))
+      )
+      statisticsStore
+    ) (catchError requestedPackages')
 
 comparePackageFormHandler :: ActionM ()
 comparePackageFormHandler = do
   rescue (do
     statisticsStore <- liftIO $ Arch.getPackagesStats "packageStatistics.json"
-    withStatisticStore (\store -> (lift $ getComparePackageTmpl [] [] store) >>= (html . convertString)) statisticsStore
-    ) (\e-> (lift $ getErrorTmpl (convertString e) []) >>= (html . convertString))
+    withStatisticStore
+      (\store -> (lift $ getComparePackageTmpl [] [] store) >>= (respondHtml))
+      statisticsStore
+    ) (catchError [])
 
 
-catchError :: [PTitle] -> String -> ActionM ()
-catchError pkgs = (\e -> (lift $ getErrorTmpl (convertString e) pkgs) >>= (html . convertString))
+catchError :: [PTitle] -> (LText.Text-> ActionM ())
+catchError pkgs = (\e -> (lift $ getErrorTmpl (convertString e) pkgs) >>= respondHtml)
 
 withStatisticStore :: (APSs -> ActionM ()) -> Maybe APSs -> ActionM ()
 withStatisticStore = maybe (raise "Couldn't open database store")
