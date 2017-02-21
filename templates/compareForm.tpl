@@ -12,9 +12,7 @@
     <h1>Arch Linux Package Statistic Comparison</h1>
     <form>
       <datalist id="packages">
-        <packages>
-          <option/>
-        </packages>
+        <packages/>
       </datalist>
       <label for="package1">Package 1:</label>
       <input id="package1" name="package[]" type="text" list="packages">

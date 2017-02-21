@@ -6,9 +6,10 @@
 module Test where
 
 import Test.HUnit
-import Main
 import qualified Arch
 import Data.Text (Text)
+import CompareForm
+import CompareFormTemplate
 
 testGetComparePackage :: IO Text
 testGetComparePackage = do

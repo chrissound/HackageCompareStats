@@ -9,6 +9,12 @@ cabal-version:       >=1.10
 
 executable SA
   main-is:             Main.hs
+  other-modules:       Common
+                     , CompareForm
+                     , CompareFormJson
+                     , CompareFormTemplate
+                     , Render
+                     , UserError
   hs-source-dirs:      src
   default-language:    Haskell2010
   build-depends:       base >=4.9 && <4.10
@@ -28,25 +34,5 @@ executable SA
                      , bytestring
                      , hashmap
                      , aeson
-
-executable SATest
-  main-is:             Test.hs
-  hs-source-dirs:      src
-  default-language:    Haskell2010
-  build-depends:       base >=4.9 && <4.10
-                     , HUnit
-                     , scotty
-                     , wai-extra
-                     , mtl
-                     , random
-                     , http-types
-                     , text
-                     , ArchPkgstatsScraper
-                     , string-conversions
-                     , heist
-                     , mustache
-                     , xmlhtml
-                     , map-syntax
-                     , bytestring
-                     , hashmap
-                     , aeson
+                     , directory
+                     , time
