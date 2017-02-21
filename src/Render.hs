@@ -25,7 +25,7 @@ renderHeistTemplatePath fileName hsBinding = do
   let emptyI = return () :: MapSyntax Text (I.Splice IO)
   let emptyC = return () :: MapSyntax Text (HeistCom.Splice IO)
   let emptyA = return () :: MapSyntax Text (AttrSplice IO)
-  let templateLocations = [Heist.loadTemplates "templates/"]
+  let templateLocations = [Heist.loadTemplates "templates/heist/"]
   let spliceConfig = SpliceConfig emptyI emptyI emptyC emptyA templateLocations (\_ -> False):: SpliceConfig IO
   heist <- Heist.initHeist (HeistConfig spliceConfig "" True)
   case heist of
