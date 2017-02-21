@@ -33,8 +33,7 @@ requestedPackageBind :: (Data.String.IsString k, Show a, Monad m) => a -> MapSyn
 requestedPackageBind x = "requestedPackage" ## (I.textSplice . convertString $ show x)
 
 packagesBind :: IsString k => Arch.PackagesStats -> MapSyntax k (I.Splice IO)
-packagesBind _ = do
-  "packages" ## I.textSplice "{{{cachePackages}}}"
+packagesBind _ = "packages" ## I.textSplice "{{{cachePackages}}}"
 
 
 preparePackagesCache :: Arch.PackagesStats -> IO ()
@@ -50,8 +49,9 @@ preparePackagesCache x = do
     let timeDiff = abs $ diffUTCTime lmTime time
         nominalDay = 60 * 60 * 24 :: NominalDiffTime in
         when (timeDiff > nominalDay) $ prepare
-  where
+  where 
     prepare = do
+      print ("yolo" :: String)
       hRender <- renderHeistTemplatePath "cachePackages" (I.bindSplices $ "packages" ## generateRecordSplices . fmap fst $ Arch.getPackages x)
       case hRender of
         Right hRender' -> Str.writeFile packagesCachePath $ convertString hRender'
@@ -61,9 +61,9 @@ compareFormFormBinds :: Arch.PackagesStats -> HeistBind
 compareFormFormBinds = I.bindSplices . packagesBind
 
 compareFormBinds :: Show a => Arch.PackagesStats -> [a] -> HeistBind
-compareFormBinds x rp = I.bindSplices $
-                        do packagesBind x
-                           "statisticResult" ## I.runChildrenWith (requestedPackageBind rp)
+compareFormBinds x rp = I.bindSplices $ do
+                          packagesBind x
+                          "statisticResult" ## I.runChildrenWith (requestedPackageBind rp)
 
 packagesCachePath :: FilePath
 packagesCachePath = "templates/cache/packages.tpl"

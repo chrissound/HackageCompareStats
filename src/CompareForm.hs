@@ -13,31 +13,19 @@ import           UserError                            (getErrorTmpl)
 import           Web.Scotty
 import qualified Data.Text.Internal.Lazy as LText (Text)
 
-comparePackageHandler :: ActionM ()
-comparePackageHandler = do
+comparePackageHandler :: APSs -> ActionM ()
+comparePackageHandler store = do
   requestedPackages' <- requestedPackages
   rescue (do
     when ( not $ length requestedPackages' >= 2) $
       raise "You need to specify atleast two requestedPackages"
-    statisticsStore <- liftIO $ Arch.getPackagesStats "packageStatistics.json"
-    withStatisticStore
-      (\store -> case comparePackageGetPackages requestedPackages' store of
-          Right aps -> (lift $ getComparePackageTmpl requestedPackages' aps store) >>= respondHtml
-          Left e -> raise . convertString $ e
-      )
-      statisticsStore
+    case comparePackageGetPackages requestedPackages' store of
+      Right aps -> (lift $ getComparePackageTmpl requestedPackages' aps store) >>= respondHtml
+      Left e -> raise . convertString $ e
     ) (catchError requestedPackages')
 
-comparePackageFormHandler :: ActionM ()
-comparePackageFormHandler = do
-  lift $ print ("test"::String)
-  rescue (do
-    statisticsStore <- liftIO $ Arch.getPackagesStats "packageStatistics.json"
-    withStatisticStore
-      (\store -> (lift $ getComparePackageFormTmpl store) >>= (respondHtml))
-      statisticsStore
-    ) (catchError [])
-
+comparePackageFormHandler :: APSs -> ActionM ()
+comparePackageFormHandler store = (lift $ getComparePackageFormTmpl store) >>= (respondHtml)
 
 catchError :: [PTitle] -> (LText.Text-> ActionM ())
 catchError pkgs = (\e -> (lift $ getErrorTmpl (convertString e) pkgs) >>= respondHtml)
