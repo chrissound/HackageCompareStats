@@ -1,1 +1,2 @@
 templates/cache/*.*
+!templates/cache/.keepme
