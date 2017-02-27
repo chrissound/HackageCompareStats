@@ -1,12 +1,14 @@
-name:                ArchPackageCompareStats
-version:             0.1.0.0
-license:             BSD3
-license-file:        LICENSE
-author:              Chris Stryczynski
-build-type:          Simple
-extra-source-files:  ChangeLog.md
-cabal-version:       >=1.10
-
+name:                 ArchPackageCompareStats
+version:              0.1.0.0
+license:              BSD3
+license-file:         LICENSE
+author:               Chris Stryczynski
+build-type:           Simple
+extra-source-files:   ChangeLog.md
+cabal-version:        >=1.10
+extra-source-files:   templates/*.js
+                    , templates/heist/*.tpl
+                    , templates/cache/.keepme
 executable webserver
   main-is:             Main.hs
   other-modules:       Common
@@ -15,7 +17,7 @@ executable webserver
                      , CompareFormTemplate
                      , Render
                      , UserError
-  hs-source-dirs:      src
+  hs-source-dirs:      src, templates
   default-language:    Haskell2010
   build-depends:       base >=4.9 && <4.10
                      , HUnit
@@ -36,3 +38,7 @@ executable webserver
                      , aeson
                      , directory
                      , time
+
+source-repository    head
+  type:              git
+  location:          git@github.com:chrissound/ArchPackageCompareStats.git
