@@ -20,25 +20,27 @@ getStore  = lift $ Common.getStore <$> ask
 
 comparePackageHandler :: ArchCompareActionM ()
 comparePackageHandler = do
+  archConfig <- lift ask
   store <- getStore
   requestedPackages' <- requestedPackages
   rescue (do
     when ( not $ length requestedPackages' >= 2) $
       raise "You need to specify atleast two requestedPackages"
     case comparePackageGetPackages requestedPackages' store of
-      Right aps -> (liftIO $ getComparePackageTmpl requestedPackages' aps store) >>= respondHtml
+      Right aps -> (liftIO $ getComparePackageTmpl requestedPackages' aps archConfig) >>= respondHtml
       Left e -> raise . convertString $ e
     ) (catchError requestedPackages')
 
 comparePackageFormHandler :: ArchCompareActionM ()
 comparePackageFormHandler = do
-  store <- getStore
-  (liftIO $ getComparePackageFormTmpl store) >>= (respondHtml)
+  archConfig <- lift ask
+  (liftIO $ getComparePackageFormTmpl archConfig) >>= (respondHtml)
 
-catchError :: [PTitle] -> (LText.Text-> ArchCompareActionM ())
-catchError pkgs = (\e ->
-                     (liftIO $ getErrorTmpl (convertString e) pkgs) >>= respondHtml
-                  )
+catchError :: [PTitle] -> LText.Text -> ArchCompareActionM ()
+catchError pkgs e = do
+  archConfig <- lift ask
+  liftIO $ getErrorTmpl archConfig (convertString e) pkgs
+  >>= respondHtml
 
 withStatisticStore :: (Monad m) => (APSs -> ActionT LText.Text m ()) -> Maybe APSs -> ActionT LText.Text m ()
 withStatisticStore = maybe (Web.Scotty.Trans.raise "Couldn't open database store")

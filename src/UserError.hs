@@ -6,15 +6,16 @@ import Heist.Internal.Types
 import Data.String.Conversions
 import Data.Map.Syntax
 import CompareFormTemplate
-import Common (PTitle)
+import Common (PTitle, ArchCompareReadState)
 import Data.Text (Text)
 import Render
 
-getErrorTmpl :: String -> [PTitle]-> IO Text
-getErrorTmpl e rP = (renderHeistTemplatePath"userError" $ errorBinds e rP)
+getErrorTmpl :: ArchCompareReadState -> String -> [PTitle]-> IO Text
+getErrorTmpl archConfig e rP = (renderHeistTemplatePath"userError" $ errorBinds archConfig e rP)
   >>= (either (error. convertString) return )
 
-errorBinds:: String -> [PTitle] -> HeistState IO -> HeistState IO
-errorBinds s rP = I.bindSplices $ do
+errorBinds:: ArchCompareReadState -> String -> [PTitle] -> HeistState IO -> HeistState IO
+errorBinds archConfig s rP = I.bindSplices $ do
+  baseUrlBind archConfig
   "errorMessage"  ## I.textSplice . convertString $ s
   requestedPackageBind rP

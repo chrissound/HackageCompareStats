@@ -23,6 +23,9 @@ import Data.Time.Clock (getCurrentTime, diffUTCTime, NominalDiffTime)
 optionHtml :: Text -> X.Node
 optionHtml v = X.Element "option" [("value", v)] []
 
+baseUrl :: Text -> X.Node
+baseUrl v = X.Element "base" [("href", v)] []
+
 generateRecordSplice :: Text -> I.Splice IO
 generateRecordSplice = I.runNode . optionHtml
 
@@ -32,9 +35,8 @@ generateRecordSplices = I.mapSplices generateRecordSplice
 requestedPackageBind :: (Data.String.IsString k, Show a, Monad m) => a -> MapSyntax k (HeistT n m Heist.Internal.Types.Template)
 requestedPackageBind x = "requestedPackage" ## (I.textSplice . convertString $ show x)
 
-packagesBind :: IsString k => Arch.PackagesStats -> MapSyntax k (I.Splice IO)
-packagesBind _ = "packages" ## I.textSplice "{{{cachePackages}}}"
-
+packagesBind :: IsString k => MapSyntax k (I.Splice IO)
+packagesBind = "packages" ## I.textSplice "{{{cachePackages}}}"
 
 preparePackagesCache :: Arch.PackagesStats -> IO ()
 preparePackagesCache x = do
@@ -49,7 +51,7 @@ preparePackagesCache x = do
     let timeDiff = abs $ diffUTCTime lmTime time
         nominalDay = 60 * 60 * 24 :: NominalDiffTime in
         when (timeDiff > nominalDay) $ prepare
-  where 
+  where
     prepare = do
       print ("yolo" :: String)
       hRender <- renderHeistTemplatePath "cachePackages" (I.bindSplices $ "packages" ## generateRecordSplices . fmap fst $ Arch.getPackages x)
@@ -57,20 +59,27 @@ preparePackagesCache x = do
         Right hRender' -> Str.writeFile packagesCachePath $ convertString hRender'
         Left e -> error $ convertString e
 
-compareFormFormBinds :: Arch.PackagesStats -> HeistBind
-compareFormFormBinds = I.bindSplices . packagesBind
+compareFormFormBinds :: ArchCompareReadState -> HeistBind
+compareFormFormBinds archConfig = I.bindSplices $ do
+  baseUrlBind archConfig
+  packagesBind
 
-compareFormBinds :: Show a => Arch.PackagesStats -> [a] -> HeistBind
-compareFormBinds x rp = I.bindSplices $ do
-                          packagesBind x
-                          "statisticResult" ## I.runChildrenWith (requestedPackageBind rp)
+baseUrlBind :: IsString k => ArchCompareReadState -> MapSyntax k (I.Splice IO)
+baseUrlBind archConfig = "baseUrl" ## I.runNode (baseUrl . convertString $ getBaseUrl archConfig)
+
+compareFormBinds :: Show a => ArchCompareReadState -> [a] -> HeistBind
+compareFormBinds archConfig rp = do
+  I.bindSplices $ do
+    packagesBind
+    baseUrlBind archConfig
+    "statisticResult" ## I.runChildrenWith (requestedPackageBind rp)
 
 packagesCachePath :: FilePath
 packagesCachePath = "templates/cache/packages.tpl"
 
-getComparePackageTmpl :: [PTitle] -> [APS] -> APSs-> IO Text
-getComparePackageTmpl requestedPackages' foundPackages statisticsStore = do
-      preparePackagesCache statisticsStore
+getComparePackageTmpl :: [PTitle] -> [APS] -> ArchCompareReadState -> IO Text
+getComparePackageTmpl requestedPackages' foundPackages archConfig = do
+      preparePackagesCache $ getStore archConfig
       scriptInject <- readFile "templates/compareForm.js"
       let jsonData2 = (comparisonToHighChartSeries $ convert foundPackages)
       let mRender = renderMustacheTemplate scriptInject
@@ -82,8 +91,8 @@ getComparePackageTmpl requestedPackages' foundPackages statisticsStore = do
                 "scriptInject" ~> mRender'
                ,"cachePackages" ~> (convertString $ packagesCache :: Text)
                 ]
-          renderTemplate "compareForm" ( compareFormBinds statisticsStore requestedPackages') $ Just mBinding
+          renderTemplate "compareForm" ( compareFormBinds archConfig requestedPackages') $ Just mBinding
         Nothing -> error "Mustache render error. Failed to render "
 
-getComparePackageFormTmpl :: APSs-> IO Text
-getComparePackageFormTmpl statisticsStore = renderTemplate "compareFormForm" (compareFormFormBinds statisticsStore) Nothing
+getComparePackageFormTmpl :: ArchCompareReadState -> IO Text
+getComparePackageFormTmpl archConfig = renderTemplate "compareFormForm" (compareFormFormBinds archConfig) Nothing
