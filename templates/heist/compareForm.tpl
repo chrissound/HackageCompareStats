@@ -21,7 +21,7 @@
   </head>
   <body>
     <h1>Arch Linux Package Statistic Comparison</h1>
-    <form>
+    <form action="comparePackage">
       <datalist id="packages">
         <packages/>
       </datalist>
