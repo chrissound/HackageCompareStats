@@ -3,16 +3,19 @@ module Main  where
 
 import           Prelude
 import           CompareForm
-import           Web.Scotty
+import           Web.Scotty.Trans
 import qualified Arch
+import Common
+import Control.Monad.Trans.Reader
 
 main :: IO ()
 main = do
-  -- Great candidate for reader monad. I'm not there yet however.
   statisticsStore <- Arch.getPackagesStats "packageStatistics.json"
   case statisticsStore of
-    Just store -> scotty 3000 $ do
-      get (literal "/comparePackage") $ comparePackageHandler store
-      get "/comparePackage" $ comparePackageFormHandler store
-      get "" $ comparePackageFormHandler store
+    Just y -> do
+      let readState = ArchCompareReadState "test" y
+      scottyT 3000 (\x -> runReaderT x readState) $ do
+       get (literal "/comparePackage") $ comparePackageHandler
+       get "/comparePackage" $ comparePackageFormHandler
+       get "" $ comparePackageFormHandler
     Nothing -> error "Unable to find data store!"

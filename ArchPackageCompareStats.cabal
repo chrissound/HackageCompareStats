@@ -38,7 +38,7 @@ executable webserver
                      , aeson
                      , directory
                      , time
-
+                     , transformers
 source-repository    head
   type:              git
   location:          git@github.com:chrissound/ArchPackageCompareStats.git

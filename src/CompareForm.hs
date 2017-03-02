@@ -2,7 +2,8 @@
 module CompareForm where
 
 import qualified Arch
-import           Common
+import           Common hiding (getStore)
+import qualified Common (getStore)
 import           CompareFormTemplate
 import           Control.Monad
 import           Control.Monad.Trans
@@ -10,30 +11,39 @@ import           Data.Maybe                           (isJust)
 import           Data.String.Conversions
 import           Prelude
 import           UserError                            (getErrorTmpl)
-import           Web.Scotty
+import Web.Scotty.Trans (rescue, ActionT, raise)
 import qualified Data.Text.Internal.Lazy as LText (Text)
+import Control.Monad.Trans.Reader
 
-comparePackageHandler :: APSs -> ActionM ()
-comparePackageHandler store = do
+getStore :: ArchCompareActionM APSs
+getStore  = lift $ Common.getStore <$> ask
+
+comparePackageHandler :: ArchCompareActionM ()
+comparePackageHandler = do
+  store <- getStore
   requestedPackages' <- requestedPackages
   rescue (do
     when ( not $ length requestedPackages' >= 2) $
       raise "You need to specify atleast two requestedPackages"
     case comparePackageGetPackages requestedPackages' store of
-      Right aps -> (lift $ getComparePackageTmpl requestedPackages' aps store) >>= respondHtml
+      Right aps -> (liftIO $ getComparePackageTmpl requestedPackages' aps store) >>= respondHtml
       Left e -> raise . convertString $ e
     ) (catchError requestedPackages')
 
-comparePackageFormHandler :: APSs -> ActionM ()
-comparePackageFormHandler store = (lift $ getComparePackageFormTmpl store) >>= (respondHtml)
+comparePackageFormHandler :: ArchCompareActionM ()
+comparePackageFormHandler = do
+  store <- getStore
+  (liftIO $ getComparePackageFormTmpl store) >>= (respondHtml)
 
-catchError :: [PTitle] -> (LText.Text-> ActionM ())
-catchError pkgs = (\e -> (lift $ getErrorTmpl (convertString e) pkgs) >>= respondHtml)
+catchError :: [PTitle] -> (LText.Text-> ArchCompareActionM ())
+catchError pkgs = (\e ->
+                     (liftIO $ getErrorTmpl (convertString e) pkgs) >>= respondHtml
+                  )
 
-withStatisticStore :: (APSs -> ActionM ()) -> Maybe APSs -> ActionM ()
-withStatisticStore = maybe (raise "Couldn't open database store")
+withStatisticStore :: (Monad m) => (APSs -> ActionT LText.Text m ()) -> Maybe APSs -> ActionT LText.Text m ()
+withStatisticStore = maybe (Web.Scotty.Trans.raise "Couldn't open database store")
 
-requestedPackages :: ActionM [PTitle]
+requestedPackages :: (Monad m) => ActionT LText.Text m [PTitle]
 requestedPackages = multiParam "package[]" >>= return . filter (/= "")
 
 comparePackageGetPackages :: [PTitle] -> APSs -> Either String [APS]
