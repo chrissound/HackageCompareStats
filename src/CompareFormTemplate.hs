@@ -81,9 +81,9 @@ getComparePackageTmpl :: [PTitle] -> [APS] -> ArchCompareReadState -> IO Text
 getComparePackageTmpl requestedPackages' foundPackages archConfig = do
       preparePackagesCache $ getStore archConfig
       scriptInject <- readFile "templates/compareForm.js"
-      let jsonData2 = (comparisonToHighChartSeries $ convert foundPackages)
+      let jsonData = (comparisonToHighChartSeries $ convert foundPackages)
       let mRender = renderMustacheTemplate scriptInject
-                      (object ["jsonData" ~> (convertString $ encode jsonData2 :: String)])
+                      (object ["jsonData" ~> (convertString $ encode jsonData :: String)])
       case mRender of
         Just mRender' -> do
           packagesCache <- Str.readFile packagesCachePath

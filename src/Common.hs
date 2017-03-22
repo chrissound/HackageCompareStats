@@ -7,16 +7,16 @@ import Data.String.Conversions
 import Data.Text (Text)
 import qualified Data.Text.Internal.Lazy as LText (Text)
 import Web.Scotty.Trans (ScottyT, ActionT, params, html)
-import Data.List (sort)
 import GHC.Generics
-import Data.List (sortBy)
+import Data.List (sortBy, reverse)
 import Control.Monad.Trans.Reader
+import Data.Function (on)
 
 type PackageTitle = Text
 type PTitle = PackageTitle
 type APS = Arch.PackageStat
 type APSs = Arch.PackagesStats
-newtype APCSm = APCSm [(Text, Float)] deriving (Show, Generic)
+newtype APCSm = APCSm [Arch.PackageStat] deriving (Show, Generic)
 
 data ArchCompareReadState = ArchCompareReadState
   { getBaseUrl :: String
@@ -31,11 +31,8 @@ data PackageStatComparison = PackageStatComparison {
 } deriving (Show)
 
 convert :: [APS] -> PackageStatComparison
-convert x@(_:_) = PackageStatComparison (Just $ topPkg) $ APCSm sortedConverted where
-  sorted@(topPkg:_) = sort x
-  sortedConverted = fmap convertAPS $ sorted where
-    convertAPS (p, perc) = (p, perc / topPerc)
-    (_,topPerc) = topPkg
+convert x@(_:_) = PackageStatComparison (Just $ topPkg) $ APCSm sorted where
+  sorted@(topPkg:_) = reverse $ sortBy (compare `on` snd) x
 convert _ = PackageStatComparison Nothing $ APCSm []
 
 multiParam :: Monad m => Text -> ActionT LText.Text m [PTitle]

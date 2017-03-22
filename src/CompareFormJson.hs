@@ -34,10 +34,10 @@ instance (ToJSON a) => ToJSON (HighChartsSet a) where
 instance (ToJSON a) => ToJSON (HighChartsSeries a) where
    toEncoding = genericToEncoding $ defaultOptions
 
-comparisonToHighChartSeries :: PackageStatComparison -> HighChartsSeries Float
+comparisonToHighChartSeries :: PackageStatComparison -> HighChartsSeries Int
 comparisonToHighChartSeries (PackageStatComparison _ apcsm) = do
   HighChartsSeries $ fmap (convertPackagesToSeries) x
   where
     (APCSm x) = apcsm
-    convertPackagesToSeries :: (Text, Float) -> HighChartsSet Float
+    convertPackagesToSeries :: (Text, a) -> HighChartsSet a
     convertPackagesToSeries (pkgName, score) = HighChartsSet (convertString pkgName) [score]

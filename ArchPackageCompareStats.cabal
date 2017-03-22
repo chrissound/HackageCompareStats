@@ -27,7 +27,7 @@ executable webserver
                      , random
                      , http-types
                      , text
-                     , ArchPkgstatsScraper
+                     , ArchPkgstatsScraper >= 0.2.0.0
                      , string-conversions
                      , heist
                      , mustache

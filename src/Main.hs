@@ -8,6 +8,7 @@ import qualified Arch
 import Common
 import Control.Monad.Trans.Reader
 import System.Environment (getArgs)
+import System.Directory (getCurrentDirectory)
 
 getBaseUrlArg :: IO String
 getBaseUrlArg = do
@@ -19,12 +20,13 @@ getBaseUrlArg = do
 main :: IO ()
 main = do
   baseURl <- getBaseUrlArg
+  getCurrentDirectory >>= print
   statisticsStore <- Arch.getPackagesStats "packageStatistics.json"
   case statisticsStore of
-    Just y -> do
+    Right y -> do
       let readState = ArchCompareReadState baseURl y
       scottyT 3000 (\x -> runReaderT x readState) $ do
        get (literal "/comparePackage") $ comparePackageHandler
        get "/comparePackage" $ comparePackageFormHandler
        get "" $ comparePackageFormHandler
-    Nothing -> error "Unable to find data store!"
+    Left e -> error $ "Unable to find data store: " ++ e
