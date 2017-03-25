@@ -53,7 +53,6 @@ preparePackagesCache x = do
         when (timeDiff > nominalDay) $ prepare
   where
     prepare = do
-      print ("yolo" :: String)
       hRender <- renderHeistTemplatePath "cachePackages" (I.bindSplices $ "packages" ## generateRecordSplices . fmap fst $ Arch.getPackages x)
       case hRender of
         Right hRender' -> Str.writeFile packagesCachePath $ convertString hRender'

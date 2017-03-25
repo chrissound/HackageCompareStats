@@ -11,9 +11,13 @@ import           Data.Maybe                           (isJust)
 import           Data.String.Conversions
 import           Prelude
 import           UserError                            (getErrorTmpl)
-import Web.Scotty.Trans (rescue, ActionT, raise)
+import Web.Scotty.Trans (rescue, ActionT, raise, params, Param)
 import qualified Data.Text.Internal.Lazy as LText (Text)
 import Control.Monad.Trans.Reader
+
+processParams :: Maybe [Param] -> Maybe [Param]
+processParams = fmap . fmap $ f
+  where f (p, _) = (("package[]"), p)
 
 getStore :: ArchCompareActionM APSs
 getStore  = lift $ Common.getStore <$> ask

@@ -39,6 +39,7 @@ executable webserver
                      , directory
                      , time
                      , transformers
+                     , wai
 source-repository    head
   type:              git
   location:          git@github.com:chrissound/ArchPackageCompareStats.git

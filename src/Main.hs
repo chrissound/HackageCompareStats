@@ -29,4 +29,6 @@ main = do
        get (literal "/comparePackage") $ comparePackageHandler
        get "/comparePackage" $ comparePackageFormHandler
        get "" $ comparePackageFormHandler
+       get comparePackageRouteMatcher $ comparePackageHandler
     Left e -> error $ "Unable to find data store: " ++ e
+  where comparePackageRouteMatcher = function (\r ->  CompareForm.processParams $ Common.processParams "/comparePackage" r )
