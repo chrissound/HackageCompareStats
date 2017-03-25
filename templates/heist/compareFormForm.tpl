@@ -12,9 +12,11 @@
 
     </script>
     <baseUrl/>
+    <title>Request a package comparison - Arch Linux Package Statistic Comparison</title>
   </head>
   <body>
-    <h1>Arch Linux Package Statistic Comparison</h1>
+    <h1>Request a package comparison</h1>
+    <h2>Arch Linux Package Statistic Comparison</h2>
     <form action="comparePackage">
       <datalist id="packages">
         <packages>

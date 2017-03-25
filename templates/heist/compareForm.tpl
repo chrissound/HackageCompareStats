@@ -18,9 +18,11 @@
     <script>
     {{{ scriptInject }}}
     </script>
+    <title><requestedPackagesVs/> - Arch Linux Package Statistic Comparison</title>
   </head>
   <body>
-    <h1>Arch Linux Package Statistic Comparison</h1>
+    <h1><requestedPackagesVs/></h1>
+    <h2>Arch Linux Package Statistic Comparison</h2>
     <form action="comparePackage">
       <datalist id="packages">
         <packages/>
@@ -43,7 +45,6 @@
       <input type="submit" value="Compare" />
     </form>
     <statisticResult>
-      <p>Requested packages: <requestedPackage/></p>
       <div id="container" style="min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto">
       </div>
     </statisticResult>

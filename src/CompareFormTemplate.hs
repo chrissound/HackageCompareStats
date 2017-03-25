@@ -19,6 +19,7 @@ import           Common
 import qualified Data.ByteString as Str
 import System.Directory (doesFileExist, getModificationTime)
 import Data.Time.Clock (getCurrentTime, diffUTCTime, NominalDiffTime)
+import Data.List (intercalate)
 
 optionHtml :: Text -> X.Node
 optionHtml v = X.Element "option" [("value", v)] []
@@ -66,10 +67,15 @@ compareFormFormBinds archConfig = I.bindSplices $ do
 baseUrlBind :: IsString k => ArchCompareReadState -> MapSyntax k (I.Splice IO)
 baseUrlBind archConfig = "baseUrl" ## I.runNode (baseUrl . convertString $ getBaseUrl archConfig)
 
-compareFormBinds :: Show a => ArchCompareReadState -> [a] -> HeistBind
+requestedPackagesVsBind :: IsString k => [PTitle] -> MapSyntax k (I.Splice IO)
+requestedPackagesVsBind x = "requestedPackagesVs" ## I.textSplice txt
+  where txt = convertString $ intercalate " VS " (convertString <$> x)
+
+compareFormBinds :: ArchCompareReadState -> [PTitle] -> HeistBind
 compareFormBinds archConfig rp = do
   I.bindSplices $ do
     packagesBind
+    requestedPackagesVsBind rp
     baseUrlBind archConfig
     "statisticResult" ## I.runChildrenWith (requestedPackageBind rp)
 
