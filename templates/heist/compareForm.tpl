@@ -23,6 +23,15 @@
   <body>
     <h1><requestedPackagesVs/></h1>
     <h2>Arch Linux Package Statistic Comparison</h2>
+    <h3>Featured:</h3>
+    <ul>
+      <li><a href="comparePackage/gnome-terminal/lxterminal/rxvt/rxvt-unicode/st/terminator/termite/xterm">Terminals</a></li>
+      <li><a href="comparePackage/atom/emacs/nano/neovim/sublime-text/vim">Editors</a></li>
+      <li><a href="comparePackage/cower/pacaur/packer/yaourt">AUR helpers</a></li>
+      <li><a href="comparePackage/chromium/firefox/google-chrome/links/lynx/midori/opera">Internet browsers</a></li>
+      <li><a href="comparePackage/awesome/cinnamon/i3-wm/lxde-common/mate-desktop/mutter/openbox/plasma-desktop/xfdesktop/xmonad">Desktop environments / Windows managers</a></li>
+    </ul>
+    <h3>Custom selection:</h3>
     <form action="comparePackage">
       <datalist id="packages">
         <packages/>
