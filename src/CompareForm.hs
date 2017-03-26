@@ -37,9 +37,9 @@ comparePackageHandler = do
   archConfig <- lift ask
   store <- getStore
   requestedPackages' <- requestedPackages
-  when (requestedPackages' /= sort requestedPackages')
-    $ redirect $ convertString
-    $ getURL $ convertString <$> sort requestedPackages'
+  when (requestedPackages' /= sort requestedPackages') $ do
+    getExposeURL $ convertString $ getURL $ convertString <$> sort requestedPackages'
+    >>= (redirect . convertString)
   rescue (do
     when ( not $ length requestedPackages' >= 2) $
       raise "You need to specify atleast two requestedPackages"
