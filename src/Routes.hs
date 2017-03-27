@@ -10,6 +10,7 @@ import Data.Binary.Builder
 import Network.HTTP.Types
 import Data.Monoid
 import Data.String.Conversions
+import Data.List
 
 comparePackageProcessParams :: Maybe [Param] -> Maybe [Param]
 comparePackageProcessParams = fmap . fmap $ f
@@ -26,4 +27,4 @@ getURL x = convertString . toLazyByteString $
   encodePathSegments ["comparePackage"] <> encodePathSegments (convertString <$> x)
 
 getExposeURL :: String -> ArchCompareActionM String
-getExposeURL x = flip (<>)  x <$> (lift ask >>= (return . getBaseUrl))
+getExposeURL x = flip (<>)  x <$> (lift ask >>= (return . dropWhileEnd (== '/') .getBaseUrl))
