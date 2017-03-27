@@ -11,26 +11,15 @@ import           Data.Maybe                           (isJust)
 import           Data.String.Conversions
 import           Prelude
 import           UserError                            (getErrorTmpl)
-import Web.Scotty.Trans (rescue, ActionT, raise, Param, redirect)
+import Web.Scotty.Trans (rescue, ActionT, raise, redirect)
 import qualified Data.Text.Internal.Lazy as LText (Text)
 import Control.Monad.Trans.Reader
-import Data.List (sort, intercalate)
-
-processParams :: Maybe [Param] -> Maybe [Param]
-processParams = fmap . fmap $ f
-  where f (p, _) = (("package[]"), p)
+import Data.List (sort)
+import Routes
 
 getStore :: ArchCompareActionM APSs
 getStore  = do
   lift $ Common.getStore <$> ask
-
-getURL :: [String] -> String
-getURL = ((++) "/comparePackage/") . intercalate "/"
-
-getExposeURL :: String -> ArchCompareActionM String
-getExposeURL x = do
-  archConfig <- lift ask
-  return $ (++) (getBaseUrl archConfig) x
 
 comparePackageHandler :: ArchCompareActionM ()
 comparePackageHandler = do

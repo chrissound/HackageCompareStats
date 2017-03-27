@@ -1,2 +1,2 @@
-:set args bob
+:set args /
 :set -Wall
