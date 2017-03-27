@@ -4,9 +4,12 @@ module Routes where
 import Common
 import Web.Scotty.Trans
 import Network.Wai (Request)
-import Data.List (intercalate)
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans
+import Data.Binary.Builder
+import Network.HTTP.Types
+import Data.Monoid
+import Data.String.Conversions
 
 comparePackageProcessParams :: Maybe [Param] -> Maybe [Param]
 comparePackageProcessParams = fmap . fmap $ f
@@ -19,9 +22,8 @@ comparePackageRouteMatcher :: String -> RoutePattern
 comparePackageRouteMatcher = function . comparePackageRouteValidate
 
 getURL :: [String] -> String
-getURL = ((++) "/comparePackage/") . intercalate "/"
+getURL x = convertString . toLazyByteString $
+  encodePathSegments ["comparePackage"] <> encodePathSegments (convertString <$> x)
 
 getExposeURL :: String -> ArchCompareActionM String
-getExposeURL x = do
-  archConfig <- lift ask
-  return $ (++) (getBaseUrl archConfig) x
+getExposeURL x = flip (<>)  x <$> (lift ask >>= (return . getBaseUrl))
