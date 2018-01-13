@@ -1,4 +1,4 @@
-name:                 ArchPackageCompareStats
+name:                 HackageCompareStats
 version:              0.1.0.1
 license:              BSD3
 license-file:         LICENSE
@@ -27,7 +27,7 @@ executable webserver
                      , random
                      , http-types
                      , text
-                     , ArchPkgstatsScraper >= 0.2.0.0
+                     , HackageDownloadStatsScraper >= 0.2.0.0
                      , string-conversions
                      , heist
                      , mustache

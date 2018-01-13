@@ -1,1 +1,1 @@
-ghcid '--command=stack ghci ArchPackageCompareStats:exe:webserver' --test='main'
+ghcid '--command=stack ghci HackageCompareStats:exe:webserver' --test='main'

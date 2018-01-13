@@ -14,7 +14,9 @@
     <baseUrl/>
   </head>
   <body>
-    <h1>Arch Linux Package Statistic Comparison</h1>
+    <h2>Hackage Package Downloads Comparison</h2>
+    <h3>Featured:</h3>
+    <featured/>
     <form action="comparePackage">
       <datalist id="packages">
         <packages>

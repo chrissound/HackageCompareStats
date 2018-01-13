@@ -20,6 +20,9 @@ import qualified Data.ByteString as Str
 import System.Directory (doesFileExist, getModificationTime)
 import Data.Time.Clock (getCurrentTime, diffUTCTime, NominalDiffTime)
 import Data.List (intercalate)
+import Text.XmlHtml
+
+type FeaturedHtml = [Node]
 
 optionHtml :: Text -> X.Node
 optionHtml v = X.Element "option" [("value", v)] []
@@ -59,10 +62,11 @@ preparePackagesCache x = do
         Right hRender' -> Str.writeFile packagesCachePath $ convertString hRender'
         Left e -> error $ convertString e
 
-compareFormFormBinds :: ArchCompareReadState -> HeistBind
-compareFormFormBinds archConfig = I.bindSplices $ do
+compareFormFormBinds :: ArchCompareReadState -> FeaturedHtml -> HeistBind
+compareFormFormBinds archConfig featured = I.bindSplices $ do
   baseUrlBind archConfig
   packagesBind
+  "featured" ## return featured
 
 baseUrlBind :: IsString k => ArchCompareReadState -> MapSyntax k (I.Splice IO)
 baseUrlBind archConfig = "baseUrl" ## I.runNode (baseUrl . convertString $ getBaseUrl archConfig)
@@ -71,16 +75,24 @@ requestedPackagesVsBind :: IsString k => [PTitle] -> MapSyntax k (I.Splice IO)
 requestedPackagesVsBind x = "requestedPackagesVs" ## I.textSplice txt
   where txt = convertString $ intercalate " VS " (convertString <$> x)
 
-compareFormBinds :: ArchCompareReadState -> [PTitle] -> HeistBind
-compareFormBinds archConfig rp = do
+compareFormBinds :: ArchCompareReadState -> [PTitle] -> FeaturedHtml-> HeistBind
+compareFormBinds archConfig rp featured = do
   I.bindSplices $ do
     packagesBind
     requestedPackagesVsBind rp
     baseUrlBind archConfig
     "statisticResult" ## I.runChildrenWith (requestedPackageBind rp)
-
+    "featured" ## return featured
+ 
 packagesCachePath :: FilePath
 packagesCachePath = "templates/cache/packages.tpl"
+
+getFeaturedHtml :: IO [Node]
+getFeaturedHtml = do
+      featured <- readFile "templates/heist/featured.tpl"
+      case parseHTML "featured" (cs featured) of
+            Right x -> return $ docContent x
+            Left e -> return $ [TextNode $ cs $"Not able to parse HTML from templates/heist/featured.tpl: " ++ e]
 
 getComparePackageTmpl :: [PTitle] -> [APS] -> ArchCompareReadState -> IO Text
 getComparePackageTmpl requestedPackages' foundPackages archConfig = do
@@ -89,6 +101,7 @@ getComparePackageTmpl requestedPackages' foundPackages archConfig = do
       let jsonData = (comparisonToHighChartSeries $ convert foundPackages)
       let mRender = renderMustacheTemplate scriptInject
                       (object ["jsonData" ~> (convertString $ encode jsonData :: String)])
+      featured <- getFeaturedHtml
       case mRender of
         Just mRender' -> do
           packagesCache <- Str.readFile packagesCachePath
@@ -96,8 +109,10 @@ getComparePackageTmpl requestedPackages' foundPackages archConfig = do
                 "scriptInject" ~> mRender'
                ,"cachePackages" ~> (convertString $ packagesCache :: Text)
                 ]
-          renderTemplate "compareForm" ( compareFormBinds archConfig requestedPackages') $ Just mBinding
+          renderTemplate "compareForm" ( compareFormBinds archConfig requestedPackages' featured) $ Just mBinding
         Nothing -> error "Mustache render error. Failed to render "
 
 getComparePackageFormTmpl :: ArchCompareReadState -> IO Text
-getComparePackageFormTmpl archConfig = renderTemplate "compareFormForm" (compareFormFormBinds archConfig) Nothing
+getComparePackageFormTmpl archConfig = do
+  featured <- getFeaturedHtml
+  renderTemplate "compareFormForm" (compareFormFormBinds archConfig featured) Nothing

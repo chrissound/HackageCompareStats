@@ -11,11 +11,13 @@ import Data.Text (Text)
 import Render
 
 getErrorTmpl :: ArchCompareReadState -> String -> [PTitle]-> IO Text
-getErrorTmpl archConfig e rP = (renderHeistTemplatePath"userError" $ errorBinds archConfig e rP)
-  >>= (either (error. convertString) return )
+getErrorTmpl archConfig e rP = do
+  featured <- getFeaturedHtml
+  (renderHeistTemplatePath"userError" $ errorBinds archConfig e rP featured) >>= (either (error . convertString) return )
 
-errorBinds:: ArchCompareReadState -> String -> [PTitle] -> HeistState IO -> HeistState IO
-errorBinds archConfig s rP = I.bindSplices $ do
+errorBinds :: ArchCompareReadState -> String -> [PTitle] -> FeaturedHtml -> HeistState IO -> HeistState IO
+errorBinds archConfig s rP featured = I.bindSplices $ do
   baseUrlBind archConfig
   "errorMessage"  ## I.textSplice . convertString $ s
+  "featured" ## return $ featured
   requestedPackageBind rP
