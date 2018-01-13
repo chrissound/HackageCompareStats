@@ -1,4 +1,4 @@
-# ArchPackageCompareStats
+# HackageCompareStats
 
 Built this with Scotty (https://hackage.haskell.org/package/scotty)
 
