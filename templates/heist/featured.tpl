@@ -4,4 +4,7 @@
   <li><a href="comparePackage/string-conv/string-conversions">string-conv vs string-conversions</a></li>
   <li><a href="comparePackage/attoparsec/trifecta/megaparsec">Parsers</a></li>
   <li><a href="comparePackage/argparser/cmdargs/cmdlib/cmdtheline/console-program/getflag/hflags/multiarg/options/optparse-applicative/parseargs/ReadArgs/simpleargs/uu-options">Command line parameter processing</a></li>
+  <li><a href="comparePackage/heist/mustache/blaze-html/hamlet/lucid">Templating libraries / HTML ?</a></li>
 </ul>
+
+<p>This site is open source. Source available on <a href="https://github.com/chrissound/HackageCompareStats">https://github.com/chrissound/HackageCompareStats</a></p>

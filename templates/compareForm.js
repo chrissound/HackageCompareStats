@@ -5,12 +5,12 @@ $(function () {
             type: 'column'
         },
         title: {
-            text: 'Packages popularity'
+            text: 'Packages downloads'
         },
         yAxis: {
             min: 0,
             title: {
-                text: 'Popularity index',
+                text: 'Download count',
                 align: 'high'
             },
             labels: {
