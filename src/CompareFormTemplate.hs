@@ -114,5 +114,8 @@ getComparePackageTmpl requestedPackages' foundPackages archConfig = do
 
 getComparePackageFormTmpl :: ArchCompareReadState -> IO Text
 getComparePackageFormTmpl archConfig = do
+  packagesCache <- Str.readFile packagesCachePath
+  let mBinding = object ["cachePackages" ~> (convertString $ packagesCache :: Text)]
   featured <- getFeaturedHtml
-  renderTemplate "compareFormForm" (compareFormFormBinds archConfig featured) Nothing
+  renderTemplate "compareFormForm" (compareFormFormBinds archConfig featured) $ Just mBinding
+
